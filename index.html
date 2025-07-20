@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Schede Palestra - Versione PRO+</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0c0a09; --bg-secondary: #1c1917; --bg-gradient-from: #1f2937; --bg-gradient-to: #0c0a09;
+            --text-primary: #e2e8f0; --text-secondary: #a8a29e; --text-accent: #f59e0b; --text-accent-dark: #431407;
+            --border-color: #44403c; --btn-secondary-bg: #262626; --btn-secondary-hover: #404040;
+        }
+        html.light {
+            --bg-primary: #f3f4f6; --bg-secondary: #ffffff; --bg-gradient-from: #e5e7eb; --bg-gradient-to: #f3f4f6;
+            --text-primary: #111827; --text-secondary: #4b5563; --text-accent: #d97706; --text-accent-dark: #ffffff;
+            --border-color: #d1d5db; --btn-secondary-bg: #e5e7eb; --btn-secondary-hover: #d1d5db;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-primary); color: var(--text-primary); transition: background-color 0.3s, color 0.3s; }
+        .bg-gradient-main { background-image: linear-gradient(to bottom right, var(--bg-gradient-from), var(--bg-gradient-to)); }
+        .input-field { background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 10px 12px; width: 100%; transition: all 0.2s; color: var(--text-primary); }
+        .input-field:focus { outline: none; border-color: var(--text-accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; background-color: var(--text-accent); color: var(--text-accent-dark); font-weight: 700; padding: 10px 16px; border-radius: 0.5rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); }
+        .btn-secondary { background-color: var(--btn-secondary-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: var(--btn-secondary-hover); }
+        .btn-danger { background-color: #be123c; color: #fff1f2; }
+        .btn-danger:hover { background-color: #9f1239; }
+        .loader { border: 4px solid var(--border-color); border-top: 4px solid var(--text-accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .week-btn { flex-shrink: 0; background-color: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .week-btn.active { background-color: var(--text-accent); color: var(--text-accent-dark); font-weight: 700; border-color: var(--text-accent); }
+        .week-btn.completed { background-color: #047857; color: #d1fae5; border-color: #065f46; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .modal { transition: opacity 0.25s ease; }
+        .modal-content { transition: transform 0.25s ease; }
+        .collapsible-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out; }
+        .collapsible-content.open { max-height: 600px; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app-container" class="container mx-auto p-4 max-w-3xl">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Gym App</h1>
+            <div class="flex items-center gap-4">
+                <button id="theme-toggle-btn" class="btn btn-secondary !p-2">
+                    <svg id="theme-icon-light" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l-.707-.707a1 1 0 00-1.414 1.414l.707.707a1 1 0 011.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z"></path></svg>
+                    <svg id="theme-icon-dark" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                </button>
+                <div id="user-controls"></div>
+            </div>
+        </header>
+
+        <div id="main-view"></div>
+    </div>
+    
+    <div id="auth-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0">
+        <div class="modal-content bg-stone-900 p-8 rounded-lg shadow-xl w-full max-w-sm m-4 transform scale-95 border border-stone-800">
+            <h3 id="auth-title" class="text-xl font-bold text-white mb-4 text-center">Area Personale</h3>
+            <p id="auth-error" class="text-red-400 mb-4 text-center text-sm"></p>
+            <form id="auth-form" class="space-y-4">
+                <input type="email" name="email" class="input-field" placeholder="Email" required>
+                <input type="password" name="password" class="input-field" placeholder="Password (min. 6 caratteri)" required>
+                <button type="submit" id="auth-submit-btn" class="btn w-full">Accedi</button>
+                <button type="button" id="toggle-auth-mode-btn" class="text-center w-full mt-4 text-sm text-amber-400 hover:text-amber-300">Non hai un account? Registrati</button>
+            </form>
+        </div>
+    </div>
+    <div id="confirm-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0">
+        <div class="modal-content bg-stone-900 p-8 rounded-lg shadow-xl w-full max-w-sm m-4 transform scale-95 border border-stone-800">
+            <h3 id="confirm-title" class="text-xl font-bold text-white mb-4">Conferma Azione</h3>
+            <p id="confirm-message" class="text-stone-300 mb-6">Sei sicuro?</p>
+            <div class="flex justify-end gap-4">
+                <button id="confirm-cancel-btn" class="btn btn-secondary">Annulla</button>
+                <button id="confirm-ok-btn" class="btn btn-danger">Conferma</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyBpzZN8VmrRKW60rW1WprEzgXyhhATzaPs",
+          authDomain: "apppalestrasuper.firebaseapp.com",
+          projectId: "apppalestrasuper",
+          storageBucket: "apppalestrasuper.firebasestorage.app",
+          messagingSenderId: "883984670947",
+          appId: "1:883984670947:web:adb9a75775e78ae7a965d6",
+          measurementId: "G-CL6QVT906P"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const storage = getStorage(app);
+
+        const CATEGORIES = ["Spinta Orizzontale", "Spinta Verticale", "Tirata Orizzontale", "Tirata Verticale", "Gambe (Quad Dominant)", "Gambe (Hip Hinge)", "Accessori Spalle", "Accessori Braccia", "Addome", "Altro"];
+        const WEIGHT_INCREMENT = 2.5;
+
+        // Riferimenti DOM
+        const userControls = document.getElementById('user-controls');
+        const mainView = document.getElementById('main-view');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const confirmModal = document.getElementById('confirm-modal');
+        const authModal = document.getElementById('auth-modal');
+        
+        let currentUser = null, currentMesoId = null, currentSheetId = null, currentSheetData = null, currentWeek = 1, exercisesCache = [], saveTimeouts = {}, workoutStartTime = null, activeTimerInterval = null, isLoginMode = true;
+
+        // --- GESTIONE TEMA ---
+        function applyTheme(theme) {
+            document.documentElement.classList.toggle('light', theme === 'light');
+            document.getElementById('theme-icon-light').classList.toggle('hidden', theme !== 'light');
+            document.getElementById('theme-icon-dark').classList.toggle('hidden', theme === 'light');
+            localStorage.setItem('theme', theme);
+        }
+        themeToggleBtn.addEventListener('click', () => applyTheme(document.documentElement.classList.contains('light') ? 'dark' : 'light'));
+        applyTheme(localStorage.getItem('theme') || 'dark');
+
+        // --- GESTIONE AUTENTICAZIONE E UI ---
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                renderAppView();
+            } else {
+                renderLoginView();
+            }
+        });
+
+        function renderLoginView() {
+            mainView.innerHTML = `<div class="text-center p-8 text-stone-400">Effettua il login per accedere alla tua area personale.</div>`;
+            userControls.innerHTML = `<button id="login-btn" class="btn">Accedi / Registrati</button>`;
+            document.getElementById('login-btn').addEventListener('click', openAuthModal);
+        }
+
+        function renderAppView() {
+            userControls.innerHTML = `<button id="logout-btn" class="btn btn-secondary">Logout</button>`;
+            document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+            mainView.innerHTML = `
+                <div class="space-y-6">
+                    <div id="mesocycle-container" class="bg-gradient-main p-4 rounded-xl border border-stone-800 shadow-lg"></div>
+                    <div id="mesocycle-volume-summary-container" class="hidden"></div>
+                    <div id="sheet-container" class="bg-gradient-main p-4 rounded-xl border border-stone-800 shadow-lg hidden"></div>
+                    <div id="sheet-content" class="hidden">
+                        <div id="week-selector-container" class="mb-4"></div>
+                        <div id="week-actions-container" class="mb-4 text-center"></div>
+                        <div id="sheet-volume-summary-container" class="mb-4"></div>
+                        <div id="exercise-list-container" class="space-y-4"></div>
+                        <div class="mt-6 bg-gradient-main p-4 rounded-xl border border-stone-800 shadow-lg">
+                            <button id="toggle-add-exercise-btn" class="btn w-full btn-secondary">Aggiungi Esercizio</button>
+                            <div id="add-exercise-container" class="collapsible-content mt-4"></div>
+                        </div>
+                        <div class="mt-6 text-center">
+                            <button id="export-csv-btn" class="btn btn-secondary">Esporta Scheda (CSV)</button>
+                        </div>
+                    </div>
+                    <div id="initial-message" class="text-center p-8 text-stone-400">Seleziona o crea un mesociclo per iniziare.</div>
+                </div>`;
+            renderMesocycleSelector();
+        }
+
+        // --- FUNZIONI DI LOGICA PRINCIPALE ---
+        const getMesocyclesRef = () => collection(db, 'users', currentUser.uid, 'mesocycles');
+        const getSheetsRef = (mesoId) => collection(db, 'users', currentUser.uid, 'mesocycles', mesoId, 'trainingSheets');
+        const getExercisesRef = (mesoId, sheetId) => collection(db, 'users', currentUser.uid, 'mesocycles', mesoId, 'trainingSheets', sheetId, 'exercises');
+
+        async function renderMesocycleSelector() {
+            const mesocycleContainer = document.getElementById('mesocycle-container');
+            if (!mesocycleContainer) return;
+
+            const mesocyclesSnapshot = await getDocs(query(getMesocyclesRef(), orderBy("dataCreazione", "desc")));
+            let options = '<option value="">-- Seleziona un mesociclo --</option>';
+            mesocyclesSnapshot.forEach(doc => {
+                options += `<option value="${doc.id}">${doc.data().nome}</option>`;
+            });
+            
+            mesocycleContainer.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold text-white">Mesociclo</h3>
+                    <div class="flex items-center gap-2">
+                        <button id="export-meso-btn" class="btn btn-secondary !p-2 text-xs" title="Esporta Mesociclo (JSON)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L6.354 8.146a.5.5 0 1 0-.708.708l2 2z"/></svg>
+                        </button>
+                        <button id="import-meso-btn" class="btn btn-secondary !p-2 text-xs" title="Importa Mesociclo (JSON)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 2.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L6.354 4.854a.5.5 0 1 1-.708-.708l2-2z"/></svg>
+                        </button>
+                        <button id="toggle-create-meso-btn" class="btn btn-secondary !p-2 text-xs">Crea Nuovo</button>
+                    </div>
+                </div>
+                <select id="mesocycle-selector" class="input-field w-full">${options}</select>
+                <div id="create-meso-container" class="collapsible-content mt-3">
+                    <form id="create-meso-form" class="space-y-3"><input type="text" name="name" class="input-field" placeholder="Nome mesociclo..." required><button type="submit" class="btn w-full">Crea</button></form>
+                </div>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">`;
+            
+            const mesoSelector = document.getElementById('mesocycle-selector');
+            mesoSelector.addEventListener('change', (e) => selectMesocycle(e.target.value));
+            document.getElementById('create-meso-form').addEventListener('submit', handleCreateMeso);
+            document.getElementById('toggle-create-meso-btn').addEventListener('click', () => document.getElementById('create-meso-container').classList.toggle('open'));
+            document.getElementById('export-meso-btn').addEventListener('click', handleExportMeso);
+            document.getElementById('import-meso-btn').addEventListener('click', () => document.getElementById('import-file-input').click());
+            document.getElementById('import-file-input').addEventListener('change', handleImportMeso);
+
+            const lastMesoId = localStorage.getItem(`lastMesoId_${currentUser.uid}`);
+            if (lastMesoId && mesoSelector.querySelector(`option[value="${lastMesoId}"]`)) {
+                mesoSelector.value = lastMesoId;
+                selectMesocycle(lastMesoId);
+            }
+        }
+        
+        async function selectMesocycle(mesoId) {
+            currentMesoId = mesoId;
+            localStorage.setItem(`lastMesoId_${currentUser.uid}`, mesoId || '');
+            const sheetContent = document.getElementById('sheet-content');
+            const initialMessage = document.getElementById('initial-message');
+            const sheetContainer = document.getElementById('sheet-container');
+            const mesocycleVolumeSummaryContainer = document.getElementById('mesocycle-volume-summary-container');
+            
+            sheetContent.classList.add('hidden');
+            initialMessage.classList.remove('hidden');
+            if (!mesoId) {
+                sheetContainer.classList.add('hidden');
+                mesocycleVolumeSummaryContainer.classList.add('hidden');
+                return;
+            }
+            sheetContainer.classList.remove('hidden');
+            await renderSheetSelector();
+            await calculateAndRenderMesoVolume();
+        }
+
+        async function renderSheetSelector() {
+            const sheetContainer = document.getElementById('sheet-container');
+            const sheetsSnapshot = await getDocs(query(getSheetsRef(currentMesoId), orderBy("dataCreazione", "desc")));
+            let options = '<option value="">-- Seleziona una scheda --</option>';
+            sheetsSnapshot.forEach(doc => {
+                const sheet = doc.data();
+                options += `<option value="${doc.id}">${sheet.nomeScheda}${sheet.isCompleta ? ' (Completata)' : ''}</option>`;
+            });
+            sheetContainer.innerHTML = `
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold text-white">Scheda di Allenamento</h3>
+                    <button id="toggle-create-sheet-btn" class="btn btn-secondary !p-2 text-xs">Crea Nuova</button>
+                </div>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <select id="sheet-selector" class="input-field flex-grow">${options}</select>
+                    <div class="flex items-center gap-3">
+                        <button id="duplicate-sheet-btn" class="btn btn-secondary w-full" title="Duplica Scheda"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H6zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1H2z"/></svg></button>
+                        <button id="delete-sheet-btn" class="btn btn-danger w-full" title="Elimina Scheda"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
+                        <button id="complete-sheet-btn" class="btn btn-secondary w-full" title="Termina Scheda"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg></button>
+                    </div>
+                </div>
+                <div id="create-sheet-container" class="collapsible-content mt-3">
+                    <form id="create-sheet-form" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"><input type="text" id="new-sheet-name" class="input-field flex-grow" placeholder="Nome nuova scheda..." required><input type="number" id="new-sheet-weeks" class="input-field sm:w-28" placeholder="Sett." min="1" required><button type="submit" class="btn !w-full sm:!w-auto">Aggiungi</button></form>
+                </div>`;
+            
+            document.getElementById('sheet-selector').addEventListener('change', (e) => selectSheet(e.target.value));
+            document.getElementById('toggle-create-sheet-btn').addEventListener('click', () => document.getElementById('create-sheet-container').classList.toggle('open'));
+            document.getElementById('create-sheet-form').addEventListener('submit', handleCreateSheet);
+            document.getElementById('duplicate-sheet-btn').addEventListener('click', handleDuplicateSheet);
+            document.getElementById('delete-sheet-btn').addEventListener('click', handleDeleteSheet);
+            document.getElementById('complete-sheet-btn').addEventListener('click', handleCompleteSheet);
+        }
+
+        async function selectSheet(sheetId) {
+            const sheetContent = document.getElementById('sheet-content');
+            const initialMessage = document.getElementById('initial-message');
+            const mesocycleVolumeSummaryContainer = document.getElementById('mesocycle-volume-summary-container');
+
+            if (!sheetId) {
+                sheetContent.classList.add('hidden');
+                mesocycleVolumeSummaryContainer.classList.remove('hidden');
+                currentSheetId = null;
+                return;
+            }
+            mesocycleVolumeSummaryContainer.classList.add('hidden');
+            initialMessage.classList.add('hidden');
+            sheetContent.classList.remove('hidden');
+            currentSheetId = sheetId;
+            currentWeek = 1;
+            workoutStartTime = null;
+
+            const sheetDocRef = doc(getSheetsRef(currentMesoId), sheetId);
+            const sheetDocSnap = await getDoc(sheetDocRef);
+            if (!sheetDocSnap.exists()) { alert("Scheda non trovata!"); return; }
+            currentSheetData = sheetDocSnap.data();
+            
+            renderWeekSelector();
+            renderWeekActions();
+            renderAddExerciseForm();
+            await loadAndRenderExercises();
+        }
+
+        async function loadAndRenderExercises() {
+            const exerciseContainer = document.getElementById('exercise-list-container');
+            exerciseContainer.innerHTML = '<div class="loader"></div>';
+            const exercisesRef = getExercisesRef(currentMesoId, currentSheetId);
+            const q = query(exercisesRef, orderBy("ordine"));
+            const exercisesSnapshot = await getDocs(q);
+            exercisesCache = exercisesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderExercises();
+        }
+
+        // --- RENDERING UI SPECIFICA ---
+        function renderWeekSelector() {
+            const weekSelectorContainer = document.getElementById('week-selector-container');
+            const numWeeks = currentSheetData.numeroSettimane || 1;
+            const completedWeeks = currentSheetData.completedWeeks || [];
+            weekSelectorContainer.innerHTML = `<div class="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar"></div>`;
+            const container = weekSelectorContainer.firstElementChild;
+            for (let i = 1; i <= numWeeks; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = `Sett. ${i}`;
+                let classes = 'week-btn px-4 py-2 rounded-md font-semibold text-sm';
+                if (i === currentWeek) classes += ' active';
+                if (completedWeeks.includes(i)) classes += ' completed';
+                btn.className = classes;
+                btn.onclick = () => { currentWeek = i; renderWeekSelector(); renderExercises(); renderWeekActions(); };
+                container.appendChild(btn);
+            }
+        }
+        
+        function renderWeekActions() {
+            const weekActionsContainer = document.getElementById('week-actions-container');
+            const duration = currentSheetData.workoutDurations?.[currentWeek];
+            let durationHTML = duration ? `<p class="text-sm text-stone-400">Durata Allenamento: <span class="font-bold text-amber-400">${duration}</span></p>` : '';
+            weekActionsContainer.innerHTML = `<button id="complete-week-btn" class="btn btn-secondary">Completa Settimana ${currentWeek}</button>${durationHTML}`;
+            document.getElementById('complete-week-btn').addEventListener('click', handleCompleteWeek);
+        }
+
+        async function calculateAndRenderMesoVolume() {
+            const mesocycleVolumeSummaryContainer = document.getElementById('mesocycle-volume-summary-container');
+            mesocycleVolumeSummaryContainer.classList.remove('hidden');
+            mesocycleVolumeSummaryContainer.innerHTML = '<div class="loader"></div>';
+            const volumeByCategory = {};
+            const sheetsSnapshot = await getDocs(getSheetsRef(currentMesoId));
+
+            for (const sheetDoc of sheetsSnapshot.docs) {
+                const exercisesSnapshot = await getDocs(getExercisesRef(currentMesoId, sheetDoc.id));
+                exercisesSnapshot.forEach(exDoc => {
+                    const ex = exDoc.data();
+                    const category = ex.categoria || 'Senza Categoria';
+                    if (!volumeByCategory[category]) volumeByCategory[category] = 0;
+                    volumeByCategory[category] += ex.serie;
+                });
+            }
+
+            let summaryHTML = `<h3 class="text-lg font-bold mb-2 text-white">Volume Totale Mesociclo (Settimana 1)</h3><div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">`;
+            const sortedCategories = Object.keys(volumeByCategory).sort();
+            if (sortedCategories.length === 0) summaryHTML = '<p class="text-stone-400">Nessun esercizio trovato in questo mesociclo.</p>';
+            else sortedCategories.forEach(cat => { summaryHTML += `<div class="bg-stone-800/50 p-2 rounded"><span class="font-semibold text-stone-300">${cat}:</span> <span class="text-amber-400 font-bold">${volumeByCategory[cat]} serie</span></div>`; });
+            summaryHTML += `</div>`;
+            mesocycleVolumeSummaryContainer.innerHTML = summaryHTML;
+        }
+
+        function calculateAndRenderSheetVolume() {
+            const sheetVolumeSummaryContainer = document.getElementById('sheet-volume-summary-container');
+            const volumeByCategory = {};
+            exercisesCache.forEach(ex => {
+                const category = ex.categoria || 'Senza Categoria';
+                if (!volumeByCategory[category]) volumeByCategory[category] = 0;
+                volumeByCategory[category] += ex.serie;
+            });
+            let summaryHTML = `<h3 class="text-lg font-bold mb-2 text-white">Volume Scheda</h3><div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">`;
+            const sortedCategories = Object.keys(volumeByCategory).sort();
+            if (sortedCategories.length === 0) summaryHTML = '';
+            else sortedCategories.forEach(cat => { summaryHTML += `<div class="bg-stone-800/50 p-2 rounded"><span class="font-semibold text-stone-300">${cat}:</span> <span class="text-amber-400 font-bold">${volumeByCategory[cat]} serie</span></div>`; });
+            summaryHTML += `</div>`;
+            sheetVolumeSummaryContainer.innerHTML = summaryHTML;
+        }
+        
+        function renderExercises() {
+            const exerciseContainer = document.getElementById('exercise-list-container');
+            exerciseContainer.innerHTML = '';
+            if (exercisesCache.length === 0) {
+                exerciseContainer.innerHTML = `<p class="text-center p-8 text-stone-400">Nessun esercizio. Aggiungine uno qui sotto.</p>`;
+            } else {
+                exercisesCache.forEach(ex => exerciseContainer.appendChild(createExerciseCard(ex)));
+            }
+            calculateAndRenderSheetVolume();
+        }
+
+        function createExerciseCard(ex) {
+            const card = document.createElement('div');
+            card.className = 'bg-gradient-main p-4 rounded-lg border border-stone-800 shadow-md';
+            
+            let seriesHTML = '<div class="space-y-3 mt-4">';
+            const weeklyData = ex.datiSettimanali?.[currentWeek] || [];
+            const prevWeeklyData = ex.datiSettimanali?.[currentWeek - 1] || [];
+            
+            for (let i = 0; i < ex.serie; i++) {
+                let setData = weeklyData[i] || { carico: '', reps: '' };
+                const prevSetData = prevWeeklyData[i] || null;
+                
+                if (currentWeek > 1 && !setData.carico && prevSetData?.carico && prevSetData?.reps) {
+                    const repRange = (ex.ripetizioni || "").split('-').map(Number);
+                    const maxReps = repRange.length > 1 ? repRange[1] : repRange[0];
+                    if (parseInt(prevSetData.reps) >= maxReps) {
+                        setData.carico = parseFloat(prevSetData.carico) + WEIGHT_INCREMENT;
+                    } else {
+                        setData.carico = prevSetData.carico;
+                    }
+                }
+                
+                let prevWeekHint = prevSetData ? `<p class="text-xs text-stone-500 text-right col-span-4 mb-1">Sett. prec: ${prevSetData.carico || '-'}kg x ${prevSetData.reps || '-'}</p>` : '';
+                seriesHTML += `${prevWeekHint}<div class="grid grid-cols-4 items-center gap-3"><span class="font-semibold text-stone-400 text-sm">Serie ${i + 1}</span><input type="number" step="0.5" placeholder="kg" class="input-field text-center" value="${setData.carico}" data-ex-id="${ex.id}" data-serie-index="${i}" data-field="carico"><input type="number" placeholder="reps" class="input-field text-center" value="${setData.reps}" data-ex-id="${ex.id}" data-serie-index="${i}" data-field="reps"><button class="btn btn-secondary !p-2 text-xs" data-timer="${ex.recupero}">Timer</button></div>`;
+            }
+            seriesHTML += '</div>';
+
+            const videoIcon = ex.videoUrl ? `<a href="${ex.videoUrl}" target="_blank" class="text-amber-400 hover:text-amber-300" title="Guarda il video"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.188-.01.935-.074 1.844a3.97 3.97 0 0 1-.12.885.88.88 0 0 1-.213.311 2.02 2.02 0 0 1-1.415 1.42c-1.16.308-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.013 2.013 0 0 1-1.415-1.419.88.88 0 0 1-.213-.311 3.97 3.97 0 0 1-.12-.885c-.065-.914-.073-1.77-.074-1.957v-.075c.001-.188.01-.935.074-1.844a3.97 3.97 0 0 1 .12-.885.88.88 0 0 1 .213-.311A2.01 2.01 0 0 1 3.342.66c1.16-.308 5.569-.334 6.18-.335h.142zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z"/></svg></a>` : '';
+            const imageUrlHTML = ex.imageUrl ? `<img src="${ex.imageUrl}" alt="${ex.nomeEsercizio}" class="mt-4 rounded-lg w-full h-auto object-cover">` : '';
+            card.innerHTML = `<div class="flex justify-between items-start"><div><h4 class="text-lg font-bold text-white">${ex.nomeEsercizio}</h4><p class="text-sm text-amber-400">${ex.categoria}</p><p class="text-xs text-stone-400 mt-1">Serie: ${ex.serie} | Reps: ${ex.ripetizioni} | RIR: ${ex.rir || '-'} | Recupero: ${ex.recupero || '-'}s</p>${ex.note ? `<p class="text-sm text-stone-300 mt-2 border-t border-stone-700/50 pt-2">${ex.note}</p>` : ''}</div><div class="flex items-center gap-3">${videoIcon}<button class="btn btn-danger btn-sm !p-2" data-ex-id="${ex.id}" title="Elimina Esercizio"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button></div></div>${imageUrlHTML}${seriesHTML}`;
+            return card;
+        }
+
+        function renderAddExerciseForm() {
+            const addExerciseContainer = document.getElementById('add-exercise-container');
+            const categoryOptions = CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            addExerciseContainer.innerHTML = `<form id="add-exercise-form" class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="text" name="nomeEsercizio" class="input-field" placeholder="Nome Esercizio" required>
+                    <select name="categoria" class="input-field" required>${categoryOptions}</select>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <input type="number" name="ordine" class="input-field" placeholder="Ordine" required>
+                    <input type="number" name="serie" class="input-field" placeholder="N° Serie" required>
+                    <input type="text" name="ripetizioni" class="input-field" placeholder="Reps (es. 8-10)" required>
+                    <input type="text" name="rir" class="input-field" placeholder="RIR (es. 1-2)">
+                </div>
+                <input type="number" name="recupero" class="input-field" placeholder="Recupero (secondi)">
+                <input type="text" name="note" class="input-field" placeholder="Note (opzionale)">
+                <input type="url" name="videoUrl" class="input-field" placeholder="Link Video (opzionale)">
+                <div><label class="text-sm text-stone-400 mb-1 block">Immagine (opzionale)</label><input type="file" name="imageFile" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200"></div>
+                <button type="submit" class="btn w-full">Aggiungi</button>
+            </form>`;
+            document.getElementById('add-exercise-form').addEventListener('submit', handleAddExercise);
+        }
+        
+        // --- GESTIONE EVENTI ---
+        async function handleCreateMeso(e) {
+            e.preventDefault();
+            const form = e.target;
+            const mesoName = form.elements['name'].value.trim();
+            if (!mesoName) return;
+            await addDoc(getMesocyclesRef(), { 
+                nome: mesoName, 
+                dataCreazione: new Date().toISOString() 
+            });
+            await renderMesocycleSelector();
+        }
+
+        async function handleCreateSheet(e) {
+            e.preventDefault();
+            const form = e.target;
+            const sheetName = form.elements['new-sheet-name'].value.trim();
+            const numWeeks = parseInt(form.elements['new-sheet-weeks'].value, 10);
+            if (!sheetName || !numWeeks) return;
+            await addDoc(getSheetsRef(currentMesoId), { nomeScheda: sheetName, numeroSettimane: numWeeks, dataCreazione: new Date().toISOString(), isCompleta: false, completedWeeks: [] });
+            await renderSheetSelector();
+        }
+
+        async function handleDuplicateSheet() {
+            if (!currentSheetId) { alert("Seleziona una scheda da duplicare."); return; }
+            const newName = prompt("Nuovo nome per la scheda:", `${currentSheetData.nomeScheda} (Copia)`);
+            if (!newName) return;
+            const newSheetRef = await addDoc(getSheetsRef(currentMesoId), { ...currentSheetData, nomeScheda: newName, dataCreazione: new Date().toISOString(), isCompleta: false, completedWeeks: [] });
+            const exercisesSnapshot = await getDocs(getExercisesRef(currentMesoId, currentSheetId));
+            const batch = writeBatch(db);
+            exercisesSnapshot.forEach(exDoc => {
+                const newExerciseRef = doc(getExercisesRef(currentMesoId, newSheetRef.id));
+                batch.set(newExerciseRef, exDoc.data());
+            });
+            await batch.commit();
+            alert(`Scheda "${newName}" creata!`);
+            await renderSheetSelector();
+        }
+
+        async function handleDeleteSheet() {
+            if (!currentSheetId) { alert("Seleziona una scheda da eliminare."); return; }
+            const confirmed = await showConfirmModal(`Sei sicuro di voler eliminare la scheda "${currentSheetData.nomeScheda}"? Questa azione è irreversibile.`);
+            if (confirmed) {
+                const exercisesRef = getExercisesRef(currentMesoId, currentSheetId);
+                const exercisesSnapshot = await getDocs(exercisesRef);
+                const batch = writeBatch(db);
+                exercisesSnapshot.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+                await deleteDoc(doc(getSheetsRef(currentMesoId), currentSheetId));
+                alert("Scheda eliminata con successo.");
+                currentSheetId = null;
+                document.getElementById('sheet-content').classList.add('hidden');
+                document.getElementById('initial-message').classList.remove('hidden');
+                await renderSheetSelector();
+            }
+        }
+        
+        async function handleCompleteSheet() {
+            if (!currentSheetId) { alert("Seleziona una scheda da terminare."); return; }
+            const confirmed = await showConfirmModal(`Contrassegnare la scheda "${currentSheetData.nomeScheda}" come completata?`);
+            if (confirmed) {
+                await updateDoc(doc(getSheetsRef(currentMesoId), currentSheetId), { isCompleta: true });
+                await renderSheetSelector();
+            }
+        }
+        
+        async function handleCompleteWeek() {
+            const completedWeeks = currentSheetData.completedWeeks || [];
+            if (!completedWeeks.includes(currentWeek)) {
+                completedWeeks.push(currentWeek);
+                const updateData = { completedWeeks };
+
+                if (workoutStartTime) {
+                    const endTime = new Date();
+                    const durationMs = endTime - workoutStartTime;
+                    const hours = Math.floor(durationMs / 3600000).toString().padStart(2, '0');
+                    const minutes = Math.floor((durationMs % 3600000) / 60000).toString().padStart(2, '0');
+                    const seconds = Math.floor((durationMs % 60000) / 1000).toString().padStart(2, '0');
+                    const durationString = `${hours}:${minutes}:${seconds}`;
+                    
+                    const durations = currentSheetData.workoutDurations || {};
+                    durations[currentWeek] = durationString;
+                    updateData.workoutDurations = durations;
+                    workoutStartTime = null;
+                }
+
+                await updateDoc(doc(getSheetsRef(currentMesoId), currentSheetId), updateData);
+                currentSheetData = { ...currentSheetData, ...updateData };
+                renderWeekSelector();
+                renderWeekActions();
+            }
+        }
+
+        async function handleAddExercise(e) {
+            e.preventDefault();
+            const form = e.target;
+            const btn = form.querySelector('button');
+            btn.disabled = true;
+            btn.textContent = 'Caricamento...';
+
+            let imageUrl = "";
+            const imageFile = form.elements.imageFile.files[0];
+            if (imageFile) {
+                const storageRef = ref(storage, `exercise_images/${currentUser.uid}/${currentMesoId}/${Date.now()}_${imageFile.name}`);
+                const snapshot = await uploadBytes(storageRef, imageFile);
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
+            const newExercise = {
+                nomeEsercizio: form.elements.nomeEsercizio.value,
+                categoria: form.elements.categoria.value,
+                ordine: parseInt(form.elements.ordine.value, 10),
+                serie: parseInt(form.elements.serie.value, 10),
+                ripetizioni: form.elements.ripetizioni.value,
+                rir: form.elements.rir.value || "",
+                recupero: parseInt(form.elements.recupero.value, 10) || null,
+                note: form.elements.note.value || "",
+                videoUrl: form.elements.videoUrl.value || "",
+                imageUrl: imageUrl,
+                datiSettimanali: {}
+            };
+            await addDoc(getExercisesRef(currentMesoId, currentSheetId), newExercise);
+            form.reset();
+            await loadAndRenderExercises();
+            btn.disabled = false;
+            btn.textContent = 'Aggiungi';
+        }
+
+        mainView.addEventListener('input', (e) => {
+            if (e.target.matches('input[data-ex-id]')) {
+                if (!workoutStartTime) workoutStartTime = new Date();
+                const { exId, serieIndex, field } = e.target.dataset;
+                const value = e.target.value;
+                const key = `${exId}-${currentWeek}-${serieIndex}-${field}`;
+                clearTimeout(saveTimeouts[key]);
+                saveTimeouts[key] = setTimeout(() => saveWeeklyData(exId, serieIndex, field, value), 800);
+            }
+        });
+        
+        mainView.addEventListener('click', async (e) => {
+            const target = e.target;
+            const deleteBtn = target.closest('button[data-ex-id]');
+            const timerBtn = target.closest('button[data-timer]');
+
+            if (deleteBtn) {
+                const exId = deleteBtn.dataset.exId;
+                if (await showConfirmModal('Sei sicuro di voler eliminare questo esercizio?')) {
+                    await deleteDoc(doc(getExercisesRef(currentMesoId, currentSheetId), exId));
+                    await loadAndRenderExercises();
+                }
+            } else if (timerBtn) {
+                const time = parseInt(timerBtn.dataset.timer, 10);
+                if (time && !timerBtn.disabled) {
+                    startTimer(timerBtn, time);
+                }
+            } else if (e.target.id === 'toggle-add-exercise-btn') {
+                document.getElementById('add-exercise-container').classList.toggle('open');
+            } else if (e.target.id === 'export-csv-btn') {
+                exportSheetToCSV();
+            }
+        });
+
+        function startTimer(button, duration) {
+            if (activeTimerInterval) clearInterval(activeTimerInterval);
+            button.disabled = true;
+            let timer = duration;
+            const originalText = button.textContent;
+
+            activeTimerInterval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                button.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                if (--timer < 0) {
+                    clearInterval(activeTimerInterval);
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            }, 1000);
+        }
+        
+        async function saveWeeklyData(exId, serieIndex, field, value) {
+            const exercise = exercisesCache.find(ex => ex.id === exId);
+            if (!exercise) return;
+            const updatedDati = JSON.parse(JSON.stringify(exercise.datiSettimanali || {}));
+            if (!updatedDati[currentWeek]) updatedDati[currentWeek] = [];
+            while (updatedDati[currentWeek].length <= serieIndex) updatedDati[currentWeek].push({ carico: '', reps: '' });
+            updatedDati[currentWeek][serieIndex][field] = value;
+            await updateDoc(doc(getExercisesRef(currentMesoId, currentSheetId), exId), { datiSettimanali: updatedDati });
+            exercise.datiSettimanali = updatedDati;
+            calculateAndRenderSheetVolume();
+        }
+        
+        function showConfirmModal(message) {
+            return new Promise(resolve => {
+                confirmModal.classList.remove('hidden');
+                document.getElementById('confirm-message').textContent = message;
+                setTimeout(() => confirmModal.classList.remove('opacity-0'), 10);
+                
+                const okBtn = document.getElementById('confirm-ok-btn');
+                const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+                const cleanup = (result) => {
+                    confirmModal.classList.add('opacity-0');
+                    setTimeout(() => confirmModal.classList.add('hidden'), 250);
+                    resolve(result);
+                };
+                
+                okBtn.onclick = () => cleanup(true);
+                cancelBtn.onclick = () => cleanup(false);
+            });
+        }
+        
+        function openAuthModal() {
+            authModal.classList.remove('hidden');
+            setTimeout(() => authModal.classList.remove('opacity-0'), 10);
+        }
+        function closeAuthModal() {
+            authModal.classList.add('opacity-0');
+            setTimeout(() => authModal.classList.add('hidden'), 250);
+        }
+        authModal.addEventListener('click', (e) => { if (e.target === authModal) closeAuthModal(); });
+        document.getElementById('toggle-auth-mode-btn').addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Accedi' : 'Registrati';
+            document.getElementById('toggle-auth-mode-btn').textContent = isLoginMode ? 'Non hai un account? Registrati' : 'Hai già un account? Accedi';
+            document.getElementById('auth-error').textContent = '';
+        });
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.elements.email.value, password = e.target.elements.password.value;
+            const authError = document.getElementById('auth-error');
+            const authSubmitBtn = document.getElementById('auth-submit-btn');
+            authError.textContent = '';
+            authSubmitBtn.disabled = true;
+            try {
+                if (isLoginMode) await signInWithEmailAndPassword(auth, email, password);
+                else await createUserWithEmailAndPassword(auth, email, password);
+                closeAuthModal();
+            } catch (error) {
+                authError.textContent = "Credenziali non valide o utente già esistente.";
+            } finally {
+                authSubmitBtn.disabled = false;
+            }
+        });
+        
+        async function exportSheetToCSV() {
+            if (!currentSheetId) return;
+            let csvContent = "data:text/csv;charset=utf-8,";
+            const headers = ["Ordine", "Esercizio", "Categoria", "Serie Target", "Reps Target", "Note"];
+            const maxSets = Math.max(0, ...exercisesCache.map(ex => ex.serie));
+            for (let i = 1; i <= currentSheetData.numeroSettimane; i++) {
+                for (let j = 1; j <= maxSets; j++) {
+                    headers.push(`Sett ${i} - Carico ${j}`, `Sett ${i} - Reps ${j}`);
+                }
+            }
+            csvContent += headers.join(",") + "\r\n";
+
+            exercisesCache.forEach(ex => {
+                const row = [ex.ordine, `"${ex.nomeEsercizio}"`, ex.categoria, ex.serie, ex.ripetizioni, `"${(ex.note || "").replace(/"/g, '""')}"`];
+                for (let i = 1; i <= currentSheetData.numeroSettimane; i++) {
+                    const weeklyData = ex.datiSettimanali?.[i] || [];
+                    for (let j = 0; j < maxSets; j++) {
+                        const set = weeklyData[j] || { carico: '', reps: '' };
+                        row.push(set.carico, set.reps);
+                    }
+                }
+                csvContent += row.join(",") + "\r\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${currentSheetData.nomeScheda.replace(/ /g, "_")}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function handleExportMeso() {
+            if (!currentMesoId) {
+                alert("Seleziona un mesociclo da esportare.");
+                return;
+            }
+            const mesoRef = doc(getMesocyclesRef(), currentMesoId);
+            const mesoSnap = await getDoc(mesoRef);
+            const mesoData = mesoSnap.data();
+            mesoData.sheets = [];
+
+            const sheetsSnapshot = await getDocs(getSheetsRef(currentMesoId));
+            for (const sheetDoc of sheetsSnapshot.docs) {
+                const sheetData = sheetDoc.data();
+                sheetData.exercises = [];
+                const exercisesSnapshot = await getDocs(getExercisesRef(currentMesoId, sheetDoc.id));
+                exercisesSnapshot.forEach(exDoc => {
+                    sheetData.exercises.push(exDoc.data());
+                });
+                mesoData.sheets.push(sheetData);
+            }
+
+            const jsonString = JSON.stringify(mesoData, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${mesoData.nome.replace(/ /g, "_")}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function handleImportMeso(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const mesoData = JSON.parse(e.target.result);
+                    const newMesoRef = await addDoc(getMesocyclesRef(), {
+                        nome: mesoData.nome,
+                        dataCreazione: new Date().toISOString()
+                    });
+
+                    for (const sheetData of mesoData.sheets) {
+                        const newSheetRef = await addDoc(getSheetsRef(newMesoRef.id), {
+                            nomeScheda: sheetData.nomeScheda,
+                            numeroSettimane: sheetData.numeroSettimane,
+                            dataCreazione: new Date().toISOString(),
+                            isCompleta: false,
+                            completedWeeks: []
+                        });
+
+                        const batch = writeBatch(db);
+                        sheetData.exercises.forEach(ex => {
+                            const newExRef = doc(getExercisesRef(newMesoRef.id, newSheetRef.id));
+                            batch.set(newExRef, ex);
+                        });
+                        await batch.commit();
+                    }
+                    alert(`Mesociclo "${mesoData.nome}" importato con successo!`);
+                    await renderMesocycleSelector();
+
+                } catch (error) {
+                    console.error("Errore durante l'importazione:", error);
+                    alert("File JSON non valido o danneggiato.");
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
