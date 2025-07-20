@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Schede Palestra - Versione PRO+</title>
+    <title>App Schede Palestra - Versione Completa</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -23,6 +23,7 @@
         .input-field:focus { outline: none; border-color: var(--text-accent); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4); }
         .btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; background-color: var(--text-accent); color: var(--text-accent-dark); font-weight: 700; padding: 10px 16px; border-radius: 0.5rem; transition: all 0.2s; cursor: pointer; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px -1px rgba(0,0,0,0.1); }
         .btn:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); }
+        .btn:disabled { cursor: not-allowed; filter: grayscale(50%); opacity: 0.7; }
         .btn-secondary { background-color: var(--btn-secondary-bg); color: var(--text-primary); border: 1px solid var(--border-color); }
         .btn-secondary:hover { background-color: var(--btn-secondary-hover); }
         .btn-danger { background-color: #be123c; color: #fff1f2; }
@@ -57,6 +58,7 @@
         <div id="main-view"></div>
     </div>
     
+    <!-- Auth Modal -->
     <div id="auth-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0">
         <div class="modal-content bg-stone-900 p-8 rounded-lg shadow-xl w-full max-w-sm m-4 transform scale-95 border border-stone-800">
             <h3 id="auth-title" class="text-xl font-bold text-white mb-4 text-center">Area Personale</h3>
@@ -69,6 +71,7 @@
             </form>
         </div>
     </div>
+    <!-- Confirm Modal -->
     <div id="confirm-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0">
         <div class="modal-content bg-stone-900 p-8 rounded-lg shadow-xl w-full max-w-sm m-4 transform scale-95 border border-stone-800">
             <h3 id="confirm-title" class="text-xl font-bold text-white mb-4">Conferma Azione</h3>
@@ -79,6 +82,13 @@
             </div>
         </div>
     </div>
+    <!-- Edit Exercise Modal -->
+    <div id="edit-exercise-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 hidden opacity-0 overflow-y-auto p-4">
+        <div class="modal-content bg-stone-900 p-8 rounded-lg shadow-xl w-full max-w-lg m-4 transform scale-95 border border-stone-800">
+             <h3 class="text-xl font-bold text-white mb-4">Modifica Esercizio</h3>
+             <div id="edit-exercise-container"></div>
+        </div>
+    </div>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -87,13 +97,13 @@
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
 
         const firebaseConfig = {
-          apiKey: "AIzaSyBpzZN8VmrRKW60rW1WprEzgXyhhATzaPs",
-          authDomain: "apppalestrasuper.firebaseapp.com",
-          projectId: "apppalestrasuper",
-          storageBucket: "apppalestrasuper.firebasestorage.app",
-          messagingSenderId: "883984670947",
-          appId: "1:883984670947:web:adb9a75775e78ae7a965d6",
-          measurementId: "G-CL6QVT906P"
+            apiKey: "AIzaSyBpzZN8VmrRKW60rW1WprEzgXyhhATzaPs",
+            authDomain: "apppalestrasuper.firebaseapp.com",
+            projectId: "apppalestrasuper",
+            storageBucket: "apppalestrasuper.appspot.com", // Corrected storage bucket
+            messagingSenderId: "883984670947",
+            appId: "1:883984670947:web:adb9a75775e78ae7a965d6",
+            measurementId: "G-CL6QVT906P"
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -109,6 +119,7 @@
         const themeToggleBtn = document.getElementById('theme-toggle-btn');
         const confirmModal = document.getElementById('confirm-modal');
         const authModal = document.getElementById('auth-modal');
+        const editExerciseModal = document.getElementById('edit-exercise-modal');
         
         let currentUser = null, currentMesoId = null, currentSheetId = null, currentSheetData = null, currentWeek = 1, exercisesCache = [], saveTimeouts = {}, workoutStartTime = null, activeTimerInterval = null, isLoginMode = true;
 
@@ -380,6 +391,14 @@
                 exerciseContainer.innerHTML = `<p class="text-center p-8 text-stone-400">Nessun esercizio. Aggiungine uno qui sotto.</p>`;
             } else {
                 exercisesCache.forEach(ex => exerciseContainer.appendChild(createExerciseCard(ex)));
+                const reorderBtns = exerciseContainer.querySelectorAll('.reorder-btn');
+                if (reorderBtns.length > 0) {
+                    // Disable first 'up' button
+                    exerciseContainer.querySelector('.reorder-btn[data-direction="up"]').disabled = true;
+                    // Disable last 'down' button
+                    const allDownButtons = exerciseContainer.querySelectorAll('.reorder-btn[data-direction="down"]');
+                    allDownButtons[allDownButtons.length - 1].disabled = true;
+                }
             }
             calculateAndRenderSheetVolume();
         }
@@ -411,9 +430,38 @@
             }
             seriesHTML += '</div>';
 
-            const videoIcon = ex.videoUrl ? `<a href="${ex.videoUrl}" target="_blank" class="text-amber-400 hover:text-amber-300" title="Guarda il video"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.188-.01.935-.074 1.844a3.97 3.97 0 0 1-.12.885.88.88 0 0 1-.213.311 2.02 2.02 0 0 1-1.415 1.42c-1.16.308-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.013 2.013 0 0 1-1.415-1.419.88.88 0 0 1-.213-.311 3.97 3.97 0 0 1-.12-.885c-.065-.914-.073-1.77-.074-1.957v-.075c.001-.188.01-.935.074-1.844a3.97 3.97 0 0 1 .12-.885.88.88 0 0 1 .213-.311A2.01 2.01 0 0 1 3.342.66c1.16-.308 5.569-.334 6.18-.335h.142zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z"/></svg></a>` : '';
-            const imageUrlHTML = ex.imageUrl ? `<img src="${ex.imageUrl}" alt="${ex.nomeEsercizio}" class="mt-4 rounded-lg w-full h-auto object-cover">` : '';
-            card.innerHTML = `<div class="flex justify-between items-start"><div><h4 class="text-lg font-bold text-white">${ex.nomeEsercizio}</h4><p class="text-sm text-amber-400">${ex.categoria}</p><p class="text-xs text-stone-400 mt-1">Serie: ${ex.serie} | Reps: ${ex.ripetizioni} | RIR: ${ex.rir || '-'} | Recupero: ${ex.recupero || '-'}s</p>${ex.note ? `<p class="text-sm text-stone-300 mt-2 border-t border-stone-700/50 pt-2">${ex.note}</p>` : ''}</div><div class="flex items-center gap-3">${videoIcon}<button class="btn btn-danger btn-sm !p-2" data-ex-id="${ex.id}" title="Elimina Esercizio"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button></div></div>${imageUrlHTML}${seriesHTML}`;
+            const imageUrlHTML = ex.imageUrl ? `<img src="${ex.imageUrl}" alt="${ex.nomeEsercizio}" class="mt-4 rounded-lg w-full h-auto object-cover max-h-60">` : '';
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div class="flex-grow pr-4">
+                        <h4 class="text-lg font-bold text-white">${ex.nomeEsercizio}</h4>
+                        <p class="text-sm text-amber-400">${ex.categoria}</p>
+                        <p class="text-xs text-stone-400 mt-1">Serie: ${ex.serie} | Reps: ${ex.ripetizioni} | RIR: ${ex.rir || '-'} | Recupero: ${ex.recupero || '-'}s</p>
+                        ${ex.note ? `<p class="text-sm text-stone-300 mt-2 border-t border-stone-700/50 pt-2">${ex.note}</p>` : ''}
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <div class="flex flex-col gap-1">
+                            <button class="btn btn-secondary !p-1 reorder-btn" data-reorder-ex-id="${ex.id}" data-direction="up" title="Sposta su">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/></svg>
+                            </button>
+                            <button class="btn btn-secondary !p-1 reorder-btn" data-reorder-ex-id="${ex.id}" data-direction="down" title="Sposta giù">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/></svg>
+                            </button>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                             <button class="btn btn-secondary !p-2" data-edit-ex-id="${ex.id}" title="Modifica">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                            </button>
+                            <button class="btn btn-danger !p-2" data-delete-ex-id="${ex.id}" title="Elimina">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                            </button>
+                        </div>
+                        ${ex.videoUrl ? `<a href="${ex.videoUrl}" target="_blank" class="text-amber-400 hover:text-amber-300 self-center" title="Guarda il video"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.188-.01.935-.074 1.844a3.97 3.97 0 0 1-.12.885.88.88 0 0 1-.213.311 2.02 2.02 0 0 1-1.415 1.42c-1.16.308-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.013 2.013 0 0 1-1.415-1.419.88.88 0 0 1-.213-.311 3.97 3.97 0 0 1-.12-.885c-.065-.914-.073-1.77-.074-1.957v-.075c.001-.188.01-.935.074-1.844a3.97 3.97 0 0 1 .12-.885.88.88 0 0 1 .213-.311A2.01 2.01 0 0 1 3.342.66c1.16-.308 5.569-.334 6.18-.335h.142zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z"/></svg></a>` : ''}
+                    </div>
+                </div>
+                ${imageUrlHTML}
+                ${seriesHTML}
+            `;
             return card;
         }
 
@@ -426,7 +474,7 @@
                     <select name="categoria" class="input-field" required>${categoryOptions}</select>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <input type="number" name="ordine" class="input-field" placeholder="Ordine" required>
+                    <input type="number" name="ordine" class="input-field" placeholder="Ordine" value="${(exercisesCache.length || 0) + 1}" required>
                     <input type="number" name="serie" class="input-field" placeholder="N° Serie" required>
                     <input type="text" name="ripetizioni" class="input-field" placeholder="Reps (es. 8-10)" required>
                     <input type="text" name="rir" class="input-field" placeholder="RIR (es. 1-2)">
@@ -563,6 +611,7 @@
             };
             await addDoc(getExercisesRef(currentMesoId, currentSheetId), newExercise);
             form.reset();
+            document.getElementById('add-exercise-container').classList.remove('open');
             await loadAndRenderExercises();
             btn.disabled = false;
             btn.textContent = 'Aggiungi';
@@ -581,13 +630,19 @@
         
         mainView.addEventListener('click', async (e) => {
             const target = e.target;
-            const deleteBtn = target.closest('button[data-ex-id]');
+            const reorderBtn = target.closest('button[data-reorder-ex-id]');
+            const editBtn = target.closest('button[data-edit-ex-id]');
+            const deleteBtn = target.closest('button[data-delete-ex-id]');
             const timerBtn = target.closest('button[data-timer]');
 
-            if (deleteBtn) {
-                const exId = deleteBtn.dataset.exId;
+            if (reorderBtn) {
+                reorderBtn.disabled = true; // Prevent double clicks
+                await handleReorderExercise(reorderBtn.dataset.reorderExId, reorderBtn.dataset.direction);
+            } else if (editBtn) {
+                openEditExerciseModal(editBtn.dataset.editExId);
+            } else if (deleteBtn) {
                 if (await showConfirmModal('Sei sicuro di voler eliminare questo esercizio?')) {
-                    await deleteDoc(doc(getExercisesRef(currentMesoId, currentSheetId), exId));
+                    await deleteDoc(doc(getExercisesRef(currentMesoId, currentSheetId), deleteBtn.dataset.deleteExId));
                     await loadAndRenderExercises();
                 }
             } else if (timerBtn) {
@@ -632,6 +687,7 @@
             calculateAndRenderSheetVolume();
         }
         
+        // --- FUNZIONI MODAL E UTILITY ---
         function showConfirmModal(message) {
             return new Promise(resolve => {
                 confirmModal.classList.remove('hidden');
@@ -644,6 +700,8 @@
                 const cleanup = (result) => {
                     confirmModal.classList.add('opacity-0');
                     setTimeout(() => confirmModal.classList.add('hidden'), 250);
+                    okBtn.onclick = null; // Rimuovi listener per evitare duplicati
+                    cancelBtn.onclick = null;
                     resolve(result);
                 };
                 
@@ -684,7 +742,128 @@
                 authSubmitBtn.disabled = false;
             }
         });
+
+        // --- NUOVE FUNZIONI PER MODIFICA E RIORDINO ---
         
+        function openEditExerciseModal(exId) {
+            const exercise = exercisesCache.find(ex => ex.id === exId);
+            if (!exercise) return;
+
+            const container = document.getElementById('edit-exercise-container');
+            const categoryOptions = CATEGORIES.map(cat => `<option value="${cat}" ${exercise.categoria === cat ? 'selected' : ''}>${cat}</option>`).join('');
+
+            container.innerHTML = `
+                <form id="edit-exercise-form" class="space-y-3" data-ex-id="${exId}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="text" name="nomeEsercizio" class="input-field" placeholder="Nome Esercizio" value="${exercise.nomeEsercizio}" required>
+                        <select name="categoria" class="input-field" required>${categoryOptions}</select>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <input type="number" name="ordine" class="input-field" placeholder="Ordine" value="${exercise.ordine}" required>
+                        <input type="number" name="serie" class="input-field" placeholder="N° Serie" value="${exercise.serie}" required>
+                        <input type="text" name="ripetizioni" class="input-field" placeholder="Reps (es. 8-10)" value="${exercise.ripetizioni}" required>
+                        <input type="text" name="rir" class="input-field" placeholder="RIR (es. 1-2)" value="${exercise.rir || ''}">
+                    </div>
+                    <input type="number" name="recupero" class="input-field" placeholder="Recupero (secondi)" value="${exercise.recupero || ''}">
+                    <input type="text" name="note" class="input-field" placeholder="Note (opzionale)" value="${exercise.note || ''}">
+                    <input type="url" name="videoUrl" class="input-field" placeholder="Link Video (opzionale)" value="${exercise.videoUrl || ''}">
+                    <div>
+                        <label class="text-sm text-stone-400 mb-1 block">Cambia Immagine (opzionale)</label>
+                        <input type="file" name="imageFile" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200">
+                        ${exercise.imageUrl ? `<img src="${exercise.imageUrl}" class="w-24 h-24 object-cover mt-2 rounded">` : ''}
+                    </div>
+                    <div class="flex justify-end gap-4 pt-4">
+                        <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Annulla</button>
+                        <button type="submit" class="btn">Salva Modifiche</button>
+                    </div>
+                </form>
+            `;
+
+            editExerciseModal.classList.remove('hidden');
+            setTimeout(() => editExerciseModal.classList.remove('opacity-0'), 10);
+
+            document.getElementById('edit-exercise-form').addEventListener('submit', handleUpdateExercise);
+            document.getElementById('cancel-edit-btn').addEventListener('click', closeEditExerciseModal);
+        }
+
+        function closeEditExerciseModal() {
+            editExerciseModal.classList.add('opacity-0');
+            setTimeout(() => {
+                editExerciseModal.classList.add('hidden');
+                document.getElementById('edit-exercise-container').innerHTML = ''; // Pulisci il contenuto
+            }, 250);
+        }
+        editExerciseModal.addEventListener('click', (e) => { if (e.target === editExerciseModal) closeEditExerciseModal(); });
+
+
+        async function handleUpdateExercise(e) {
+            e.preventDefault();
+            const form = e.target;
+            const exId = form.dataset.exId;
+            const originalExercise = exercisesCache.find(ex => ex.id === exId);
+
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Salvataggio...';
+
+            let imageUrl = originalExercise.imageUrl;
+            const imageFile = form.elements.imageFile.files[0];
+            if (imageFile) {
+                const storageRef = ref(storage, `exercise_images/${currentUser.uid}/${currentMesoId}/${Date.now()}_${imageFile.name}`);
+                const snapshot = await uploadBytes(storageRef, imageFile);
+                imageUrl = await getDownloadURL(snapshot.ref);
+            }
+
+            const updatedData = {
+                nomeEsercizio: form.elements.nomeEsercizio.value,
+                categoria: form.elements.categoria.value,
+                ordine: parseInt(form.elements.ordine.value, 10),
+                serie: parseInt(form.elements.serie.value, 10),
+                ripetizioni: form.elements.ripetizioni.value,
+                rir: form.elements.rir.value || "",
+                recupero: parseInt(form.elements.recupero.value, 10) || null,
+                note: form.elements.note.value || "",
+                videoUrl: form.elements.videoUrl.value || "",
+                imageUrl: imageUrl
+            };
+
+            await updateDoc(doc(getExercisesRef(currentMesoId, currentSheetId), exId), updatedData);
+            
+            closeEditExerciseModal();
+            await loadAndRenderExercises();
+        }
+
+        async function handleReorderExercise(exId, direction) {
+            const currentIndex = exercisesCache.findIndex(ex => ex.id === exId);
+            if (currentIndex === -1) return;
+
+            const otherIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+            if (otherIndex < 0 || otherIndex >= exercisesCache.length) return;
+
+            const currentExercise = exercisesCache[currentIndex];
+            const otherExercise = exercisesCache[otherIndex];
+
+            // Scambia la proprietà 'ordine'
+            const currentOrder = currentExercise.ordine;
+            const otherOrder = otherExercise.ordine;
+
+            const batch = writeBatch(db);
+            const currentExRef = doc(getExercisesRef(currentMesoId, currentSheetId), currentExercise.id);
+            const otherExRef = doc(getExercisesRef(currentMesoId, currentSheetId), otherExercise.id);
+
+            batch.update(currentExRef, { ordine: otherOrder });
+            batch.update(otherExRef, { ordine: currentOrder });
+
+            try {
+                await batch.commit();
+                await loadAndRenderExercises();
+            } catch (error) {
+                console.error("Errore durante il riordino degli esercizi:", error);
+                alert("Si è verificato un errore durante il riordino.");
+            }
+        }
+        
+        // --- FUNZIONI DI ESPORTAZIONE ---
         async function exportSheetToCSV() {
             if (!currentSheetId) return;
             let csvContent = "data:text/csv;charset=utf-8,";
