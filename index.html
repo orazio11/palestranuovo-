@@ -94,7 +94,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js"; // Added deleteObject
 
         const firebaseConfig = {
             apiKey: "AIzaSyBpzZN8VmrRKW60rW1WprEzgXyhhATzaPs",
@@ -110,7 +110,15 @@
         const auth = getAuth(app);
         const storage = getStorage(app);
 
-        const CATEGORIES = ["Spinta Orizzontale", "Spinta Verticale", "Tirata Orizzontale", "Tirata Verticale", "Gambe (Quad Dominant)", "Gambe (Hip Hinge)", "Accessori Spalle", "Accessori Braccia", "Addome", "Altro"];
+        // Updated CATEGORIES array with the user's provided list
+        const CATEGORIES = [
+            "ABDUCTORS", "ABS", "ADDUCTORS", "BICEPS", "CALVES", "CHEST ISO", "DECLINE PUSH",
+            "FRONT DELTS", "GLUTEI ISO", "HAMSTRING", "HIP HINGE", "HORIZONTAL HIP EXTENSION",
+            "HORIZONTAL PULL", "HORIZONTAL PUSH", "INCLINE PULL", "INCLINE PUSH",
+            "LEG PRESS VARIATION", "LOWER BACK", "LUNGE", "PULLOVER", "QUADS ISO",
+            "REAR DELTS", "SIDE DELTS", "SQUAT PATTERN", "TRAPS", "TRICIPITI",
+            "TRICEPS PUSH", "UPPER BACK", "VERTICAL PULL", "VERTICAL PUSH"
+        ];
         const WEIGHT_INCREMENT = 2.5;
 
         // Riferimenti DOM
@@ -297,7 +305,7 @@
 
             const sheetDocRef = doc(getSheetsRef(currentMesoId), sheetId);
             const sheetDocSnap = await getDoc(sheetDocRef);
-            if (!sheetDocSnap.exists()) { alert("Scheda non trovata!"); return; }
+            if (!sheetDocSnap.exists()) { /* Using custom modal for alerts */ showConfirmModal("Scheda non trovata!", false); return; }
             currentSheetData = sheetDocSnap.data();
             
             renderWeekSelector();
@@ -430,7 +438,8 @@
             }
             seriesHTML += '</div>';
 
-            const imageUrlHTML = ex.imageUrl ? `<img src="${ex.imageUrl}" alt="${ex.nomeEsercizio}" class="mt-4 rounded-lg w-full h-auto object-cover max-h-60">` : '';
+            // Apply Tailwind CSS classes for image resizing to a much smaller square
+            const imageUrlHTML = ex.imageUrl ? `<img src="${ex.imageUrl}" alt="${ex.nomeEsercizio}" class="mt-4 rounded-lg w-24 h-24 object-cover">` : ''; // Changed max-h-60 to w-24 h-24
             card.innerHTML = `
                 <div class="flex justify-between items-start">
                     <div class="flex-grow pr-4">
@@ -450,11 +459,10 @@
                         </div>
                         <div class="flex flex-col gap-1">
                              <button class="btn btn-secondary !p-2" data-edit-ex-id="${ex.id}" title="Modifica">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
-                            </button>
-                            <button class="btn btn-danger !p-2" data-delete-ex-id="${ex.id}" title="Elimina">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
-                            </button>
+                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/><path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"/></svg>
+                             </button>
+                             <button class="btn btn-danger !p-2" data-delete-ex-id="${ex.id}" title="Elimina">
+                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg></button>
                         </div>
                         ${ex.videoUrl ? `<a href="${ex.videoUrl}" target="_blank" class="text-amber-400 hover:text-amber-300 self-center" title="Guarda il video"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.188-.01.935-.074 1.844a3.97 3.97 0 0 1-.12.885.88.88 0 0 1-.213.311 2.02 2.02 0 0 1-1.415 1.42c-1.16.308-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.013 2.013 0 0 1-1.415-1.419.88.88 0 0 1-.213-.311 3.97 3.97 0 0 1-.12-.885c-.065-.914-.073-1.77-.074-1.957v-.075c.001-.188.01-.935.074-1.844a3.97 3.97 0 0 1 .12-.885.88.88 0 0 1 .213-.311A2.01 2.01 0 0 1 3.342.66c1.16-.308 5.569-.334 6.18-.335h.142zM6.4 5.209v4.818l4.157-2.408L6.4 5.209z"/></svg></a>` : ''}
                     </div>
@@ -482,7 +490,11 @@
                 <input type="number" name="recupero" class="input-field" placeholder="Recupero (secondi)">
                 <input type="text" name="note" class="input-field" placeholder="Note (opzionale)">
                 <input type="url" name="videoUrl" class="input-field" placeholder="Link Video (opzionale)">
-                <div><label class="text-sm text-stone-400 mb-1 block">Immagine (opzionale)</label><input type="file" name="imageFile" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200"></div>
+                <div>
+                    <input type="url" name="imageUrl" class="input-field" placeholder="Link Immagine (opzionale)">
+                    <p class="text-xs text-stone-500 mt-1">Inserisci un link diretto all'immagine (es. che finisce con .jpg, .png)</p>
+                </div>
+                <div><label class="text-sm text-stone-400 mb-1 block">Immagine da caricare (opzionale)</label><input type="file" name="imageFile" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200"></div>
                 <button type="submit" class="btn w-full">Aggiungi</button>
             </form>`;
             document.getElementById('add-exercise-form').addEventListener('submit', handleAddExercise);
@@ -512,7 +524,7 @@
         }
 
         async function handleDuplicateSheet() {
-            if (!currentSheetId) { alert("Seleziona una scheda da duplicare."); return; }
+            if (!currentSheetId) { /* Using custom modal for alerts */ showConfirmModal("Seleziona una scheda da duplicare.", false); return; }
             const newName = prompt("Nuovo nome per la scheda:", `${currentSheetData.nomeScheda} (Copia)`);
             if (!newName) return;
             const newSheetRef = await addDoc(getSheetsRef(currentMesoId), { ...currentSheetData, nomeScheda: newName, dataCreazione: new Date().toISOString(), isCompleta: false, completedWeeks: [] });
@@ -523,12 +535,12 @@
                 batch.set(newExerciseRef, exDoc.data());
             });
             await batch.commit();
-            alert(`Scheda "${newName}" creata!`);
+            /* Using custom modal for alerts */ showConfirmModal(`Scheda "${newName}" creata!`, false);
             await renderSheetSelector();
         }
 
         async function handleDeleteSheet() {
-            if (!currentSheetId) { alert("Seleziona una scheda da eliminare."); return; }
+            if (!currentSheetId) { /* Using custom modal for alerts */ showConfirmModal("Seleziona una scheda da eliminare.", false); return; }
             const confirmed = await showConfirmModal(`Sei sicuro di voler eliminare la scheda "${currentSheetData.nomeScheda}"? Questa azione è irreversibile.`);
             if (confirmed) {
                 const exercisesRef = getExercisesRef(currentMesoId, currentSheetId);
@@ -537,7 +549,7 @@
                 exercisesSnapshot.forEach(doc => batch.delete(doc.ref));
                 await batch.commit();
                 await deleteDoc(doc(getSheetsRef(currentMesoId), currentSheetId));
-                alert("Scheda eliminata con successo.");
+                /* Using custom modal for alerts */ showConfirmModal("Scheda eliminata con successo.", false);
                 currentSheetId = null;
                 document.getElementById('sheet-content').classList.add('hidden');
                 document.getElementById('initial-message').classList.remove('hidden');
@@ -546,7 +558,7 @@
         }
         
         async function handleCompleteSheet() {
-            if (!currentSheetId) { alert("Seleziona una scheda da terminare."); return; }
+            if (!currentSheetId) { /* Using custom modal for alerts */ showConfirmModal("Seleziona una scheda da terminare.", false); return; }
             const confirmed = await showConfirmModal(`Contrassegnare la scheda "${currentSheetData.nomeScheda}" come completata?`);
             if (confirmed) {
                 await updateDoc(doc(getSheetsRef(currentMesoId), currentSheetId), { isCompleta: true });
@@ -585,36 +597,48 @@
             e.preventDefault();
             const form = e.target;
             const btn = form.querySelector('button');
+            const originalBtnText = btn.textContent;
             btn.disabled = true;
             btn.textContent = 'Caricamento...';
 
-            let imageUrl = "";
+            let imageUrl = form.elements.imageUrl.value.trim(); // Get URL from the new field
             const imageFile = form.elements.imageFile.files[0];
-            if (imageFile) {
-                const storageRef = ref(storage, `exercise_images/${currentUser.uid}/${currentMesoId}/${Date.now()}_${imageFile.name}`);
-                const snapshot = await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(snapshot.ref);
-            }
 
-            const newExercise = {
-                nomeEsercizio: form.elements.nomeEsercizio.value,
-                categoria: form.elements.categoria.value,
-                ordine: parseInt(form.elements.ordine.value, 10),
-                serie: parseInt(form.elements.serie.value, 10),
-                ripetizioni: form.elements.ripetizioni.value,
-                rir: form.elements.rir.value || "",
-                recupero: parseInt(form.elements.recupero.value, 10) || null,
-                note: form.elements.note.value || "",
-                videoUrl: form.elements.videoUrl.value || "",
-                imageUrl: imageUrl,
-                datiSettimanali: {}
-            };
-            await addDoc(getExercisesRef(currentMesoId, currentSheetId), newExercise);
-            form.reset();
-            document.getElementById('add-exercise-container').classList.remove('open');
-            await loadAndRenderExercises();
-            btn.disabled = false;
-            btn.textContent = 'Aggiungi';
+            try {
+                if (imageFile) {
+                    const storageRef = ref(storage, `exercise_images/${currentUser.uid}/${currentMesoId}/${Date.now()}_${imageFile.name}`);
+                    const snapshot = await uploadBytes(storageRef, imageFile);
+                    imageUrl = await getDownloadURL(snapshot.ref);
+                } else if (imageUrl && !imageUrl.match(/\.(jpeg|jpg|gif|png|svg)$/i)) {
+                    // Basic validation for direct image link
+                    /* Using custom modal for alerts */ showConfirmModal("Il link immagine non sembra essere un link diretto a un file immagine (.jpg, .png, .gif, .svg). Assicurati di copiare l'indirizzo diretto dell'immagine.", false);
+                    return; // Stop execution if URL is not a direct image link
+                }
+
+                const newExercise = {
+                    nomeEsercizio: form.elements.nomeEsercizio.value,
+                    categoria: form.elements.categoria.value,
+                    ordine: parseInt(form.elements.ordine.value, 10),
+                    serie: parseInt(form.elements.serie.value, 10),
+                    ripetizioni: form.elements.ripetizioni.value,
+                    rir: form.elements.rir.value || "",
+                    recupero: parseInt(form.elements.recupero.value, 10) || null,
+                    note: form.elements.note.value || "",
+                    videoUrl: form.elements.videoUrl.value || "",
+                    imageUrl: imageUrl, // Use the determined imageUrl
+                    datiSettimanali: {}
+                };
+                await addDoc(getExercisesRef(currentMesoId, currentSheetId), newExercise);
+                form.reset();
+                document.getElementById('add-exercise-container').classList.remove('open');
+                await loadAndRenderExercises();
+            } catch (error) {
+                console.error("Errore durante l'aggiunta dell'esercizio:", error);
+                /* Using custom modal for alerts */ showConfirmModal("Si è verificato un errore durante l'aggiunta dell'esercizio. Controlla la console per i dettagli.", false);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalBtnText;
+            }
         }
 
         mainView.addEventListener('input', (e) => {
@@ -634,6 +658,7 @@
             const editBtn = target.closest('button[data-edit-ex-id]');
             const deleteBtn = target.closest('button[data-delete-ex-id]');
             const timerBtn = target.closest('button[data-timer]');
+            const deleteImageBtn = target.closest('button[data-delete-image-ex-id]'); // Added delete image button listener
 
             if (reorderBtn) {
                 reorderBtn.disabled = true; // Prevent double clicks
@@ -654,6 +679,15 @@
                 document.getElementById('add-exercise-container').classList.toggle('open');
             } else if (e.target.id === 'export-csv-btn') {
                 exportSheetToCSV();
+            } else if (deleteImageBtn) { // Handle image deletion
+                const exId = deleteImageBtn.dataset.deleteImageExId;
+                const exercise = exercisesCache.find(ex => ex.id === exId);
+                if (exercise && exercise.imageUrl) {
+                    const confirmed = await showConfirmModal('Sei sicuro di voler eliminare questa immagine?');
+                    if (confirmed) {
+                        await deleteExerciseImage(exId, exercise.imageUrl);
+                    }
+                }
             }
         });
 
@@ -688,15 +722,28 @@
         }
         
         // --- FUNZIONI MODAL E UTILITY ---
-        function showConfirmModal(message) {
+        function showConfirmModal(message, isConfirm = true) {
             return new Promise(resolve => {
                 confirmModal.classList.remove('hidden');
                 document.getElementById('confirm-message').textContent = message;
-                setTimeout(() => confirmModal.classList.remove('opacity-0'), 10);
                 
                 const okBtn = document.getElementById('confirm-ok-btn');
                 const cancelBtn = document.getElementById('confirm-cancel-btn');
 
+                if (isConfirm) {
+                    okBtn.classList.remove('hidden');
+                    cancelBtn.classList.remove('hidden');
+                    document.getElementById('confirm-title').textContent = "Conferma Azione";
+                } else {
+                    okBtn.classList.add('hidden');
+                    cancelBtn.classList.add('hidden');
+                    document.getElementById('confirm-title').textContent = "Notifica";
+                    // Automatically close after a short delay for non-confirm messages
+                    setTimeout(() => cleanup(false), 2000); 
+                }
+
+                setTimeout(() => confirmModal.classList.remove('opacity-0'), 10);
+                
                 const cleanup = (result) => {
                     confirmModal.classList.add('opacity-0');
                     setTimeout(() => confirmModal.classList.add('hidden'), 250);
@@ -768,9 +815,18 @@
                     <input type="text" name="note" class="input-field" placeholder="Note (opzionale)" value="${exercise.note || ''}">
                     <input type="url" name="videoUrl" class="input-field" placeholder="Link Video (opzionale)" value="${exercise.videoUrl || ''}">
                     <div>
+                        <input type="url" name="imageUrl" class="input-field" placeholder="Link Immagine (opzionale)" value="${exercise.imageUrl || ''}">
+                        <p class="text-xs text-stone-500 mt-1">Inserisci un link diretto all'immagine (es. che finisce con .jpg, .png)</p>
+                    </div>
+                    <div>
                         <label class="text-sm text-stone-400 mb-1 block">Cambia Immagine (opzionale)</label>
                         <input type="file" name="imageFile" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-100 file:text-amber-700 hover:file:bg-amber-200">
-                        ${exercise.imageUrl ? `<img src="${exercise.imageUrl}" class="w-24 h-24 object-cover mt-2 rounded">` : ''}
+                        ${exercise.imageUrl ? `
+                            <div class="flex items-center gap-2 mt-2">
+                                <img src="${exercise.imageUrl}" class="w-24 h-24 object-cover rounded">
+                                <button type="button" class="btn btn-danger !p-2 text-xs" data-delete-image-ex-id="${exId}">Elimina Immagine</button>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="flex justify-end gap-4 pt-4">
                         <button type="button" id="cancel-edit-btn" class="btn btn-secondary">Annulla</button>
@@ -784,6 +840,18 @@
 
             document.getElementById('edit-exercise-form').addEventListener('submit', handleUpdateExercise);
             document.getElementById('cancel-edit-btn').addEventListener('click', closeEditExerciseModal);
+            // Add event listener for the delete image button inside the modal
+            const deleteImageBtnInModal = container.querySelector('button[data-delete-image-ex-id]');
+            if (deleteImageBtnInModal) {
+                deleteImageBtnInModal.addEventListener('click', async () => {
+                    const confirmed = await showConfirmModal('Sei sicuro di voler eliminare questa immagine?');
+                    if (confirmed) {
+                        await deleteExerciseImage(exId, exercise.imageUrl);
+                        closeEditExerciseModal(); // Close modal after deletion
+                        await loadAndRenderExercises(); // Re-render exercises to reflect changes
+                    }
+                });
+            }
         }
 
         function closeEditExerciseModal() {
@@ -803,34 +871,68 @@
             const originalExercise = exercisesCache.find(ex => ex.id === exId);
 
             const btn = form.querySelector('button[type="submit"]');
+            const originalBtnText = btn.textContent;
             btn.disabled = true;
             btn.textContent = 'Salvataggio...';
 
-            let imageUrl = originalExercise.imageUrl;
+            let imageUrl = form.elements.imageUrl.value.trim(); // Prefer URL from input
             const imageFile = form.elements.imageFile.files[0];
-            if (imageFile) {
-                const storageRef = ref(storage, `exercise_images/${currentUser.uid}/${currentMesoId}/${Date.now()}_${imageFile.name}`);
-                const snapshot = await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(snapshot.ref);
+
+            try {
+                if (imageFile) {
+                    const storageRef = ref(storage, `exercise_images/${currentUser.uid}/${currentMesoId}/${Date.now()}_${imageFile.name}`);
+                    const snapshot = await uploadBytes(storageRef, imageFile);
+                    imageUrl = await getDownloadURL(snapshot.ref);
+                } else if (!imageUrl && originalExercise.imageUrl) {
+                    // If no new URL or file, keep the old one
+                    imageUrl = originalExercise.imageUrl;
+                } else if (imageUrl && !imageUrl.match(/\.(jpeg|jpg|gif|png|svg)$/i)) {
+                    // Basic validation for direct image link
+                    /* Using custom modal for alerts */ showConfirmModal("Il link immagine non sembra essere un link diretto a un file immagine (.jpg, .png, .gif, .svg). Assicurati di copiare l'indirizzo diretto dell'immagine.", false);
+                    return; // Stop execution if URL is not a direct image link
+                }
+
+                const updatedData = {
+                    nomeEsercizio: form.elements.nomeEsercizio.value,
+                    categoria: form.elements.categoria.value,
+                    ordine: parseInt(form.elements.ordine.value, 10),
+                    serie: parseInt(form.elements.serie.value, 10),
+                    ripetizioni: form.elements.ripetizioni.value,
+                    rir: form.elements.rir.value || "",
+                    recupero: parseInt(form.elements.recupero.value, 10) || null,
+                    note: form.elements.note.value || "",
+                    videoUrl: form.elements.videoUrl.value || "",
+                    imageUrl: imageUrl // Use the determined imageUrl
+                };
+
+                await updateDoc(doc(getExercisesRef(currentMesoId, currentSheetId), exId), updatedData);
+                
+                closeEditExerciseModal();
+                await loadAndRenderExercises();
+            } catch (error) {
+                console.error("Errore durante l'aggiornamento dell'esercizio:", error);
+                /* Using custom modal for alerts */ showConfirmModal("Si è verificato un errore durante l'aggiornamento dell'esercizio. Controlla la console per i dettagli.", false);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalBtnText;
             }
+        }
 
-            const updatedData = {
-                nomeEsercizio: form.elements.nomeEsercizio.value,
-                categoria: form.elements.categoria.value,
-                ordine: parseInt(form.elements.ordine.value, 10),
-                serie: parseInt(form.elements.serie.value, 10),
-                ripetizioni: form.elements.ripetizioni.value,
-                rir: form.elements.rir.value || "",
-                recupero: parseInt(form.elements.recupero.value, 10) || null,
-                note: form.elements.note.value || "",
-                videoUrl: form.elements.videoUrl.value || "",
-                imageUrl: imageUrl
-            };
-
-            await updateDoc(doc(getExercisesRef(currentMesoId, currentSheetId), exId), updatedData);
-            
-            closeEditExerciseModal();
-            await loadAndRenderExercises();
+        async function deleteExerciseImage(exId, imageUrl) {
+            try {
+                // Delete from Firebase Storage if it's a storage URL
+                if (imageUrl.includes("firebasestorage.googleapis.com")) {
+                    const imageRef = ref(storage, imageUrl);
+                    await deleteObject(imageRef);
+                }
+                // Update Firestore document to remove the imageUrl
+                await updateDoc(doc(getExercisesRef(currentMesoId, currentSheetId), exId), { imageUrl: "" });
+                /* Using custom modal for alerts */ showConfirmModal("Immagine eliminata con successo!", false);
+                await loadAndRenderExercises(); // Re-render exercises to reflect changes
+            } catch (error) {
+                console.error("Errore durante l'eliminazione dell'immagine:", error);
+                /* Using custom modal for alerts */ showConfirmModal("Si è verificato un errore durante l'eliminazione dell'immagine.", false);
+            }
         }
 
         async function handleReorderExercise(exId, direction) {
@@ -859,7 +961,7 @@
                 await loadAndRenderExercises();
             } catch (error) {
                 console.error("Errore durante il riordino degli esercizi:", error);
-                alert("Si è verificato un errore durante il riordino.");
+                /* Using custom modal for alerts */ showConfirmModal("Si è verificato un errore durante il riordino.", false);
             }
         }
         
@@ -899,7 +1001,7 @@
 
         async function handleExportMeso() {
             if (!currentMesoId) {
-                alert("Seleziona un mesociclo da esportare.");
+                /* Using custom modal for alerts */ showConfirmModal("Seleziona un mesociclo da esportare.", false);
                 return;
             }
             const mesoRef = doc(getMesocyclesRef(), currentMesoId);
@@ -958,12 +1060,12 @@
                         });
                         await batch.commit();
                     }
-                    alert(`Mesociclo "${mesoData.nome}" importato con successo!`);
+                    /* Using custom modal for alerts */ showConfirmModal(`Mesociclo "${mesoData.nome}" importato con successo!`, false);
                     await renderMesocycleSelector();
 
                 } catch (error) {
                     console.error("Errore durante l'importazione:", error);
-                    alert("File JSON non valido o danneggiato.");
+                    /* Using custom modal for alerts */ showConfirmModal("File JSON non valido o danneggiato.", false);
                 }
             };
             reader.readAsText(file);
